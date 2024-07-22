@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { app } from "../config/firebaseconfig";
-import { getDatabase, ref, set, push, get, remove } from "firebase/database";
+import { getDatabase, ref, set, push,onValue, get, remove } from "firebase/database";
 
 function ToDoApp() {
   const db = getDatabase(app);
-  const [status, setStatus] = useState(null);
+  // const [status, setStatus] = useState(null);
   const [status1, setStatus1] = useState(null);
   const [todo, setTodo] = useState('');
-  const [inPro, setInPro] = useState('');
-  const [comple, setComple] = useState('');
+  // const [inPro, setInPro] = useState('');
+  // const [comple, setComple] = useState('');
   const [todolist, setTodolist] = useState([]);
   const [prolist, setProlist] = useState([]);
   const [comlist, setComlist] = useState([]);
-  const [activeTask, setActivetask] = useState(null);
+  // const [activeTask, setActivetask] = useState(null);
   const [isDragging, setIsDragging] = useState(false); 
   const [draggedIndex, setDraggedIndex] = useState(null);
 
@@ -24,18 +24,11 @@ function ToDoApp() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await showToDo();
-      await showInPro();
-      await showComple();
-    };
-    fetchData();
+    realTimeGetData();
   }, []);
 
   const handleDragStart = (sta, item, id, index) => {
     setIsDragging(true);
-    setActivetask(item);
-    setStatus(sta);
     setDraggedIndex(index);
     dragRef.current = { sta, item, id }; // Store dragging information
   };
@@ -50,7 +43,6 @@ function ToDoApp() {
       }
       setIsDragging(false);
     }
-    showToDo();showInPro();showComple();
   };
 //this function updateLists create arraylist except dragged One
   const updateLists = (sta, id) => {
@@ -63,44 +55,55 @@ function ToDoApp() {
     }
   };
 
-  const showToDo = async () => {
+  const realTimeGetData=()=>{
+    
     const dbReftodo = ref(db, "plan/todo");
-    const snapshot = await get(dbReftodo);
-    if (snapshot.exists()) {
-      const myData = snapshot.val();
-      const temp = Object.keys(myData).map(myFireId => ({
-        ...myData[myFireId],
-        planId: myFireId
-      }));
-      setTodolist(temp);
-    }
-  };
+    onValue(dbReftodo,snapshot=>{
+      const data=snapshot.val();
+      if(data)
+      {
+        const temp=Object.keys(data).map(id=>({
+          ...data[id],planId:id,
+        }));
+        setTodolist(temp);
+      }
+      else
+      {
+        setTodolist([]);
+      }
+    });
 
-  const showInPro = async () => {
-    const dbRefinpro = ref(db, "plan/progress");
-    const snapshot = await get(dbRefinpro);
-    if (snapshot.exists()) {
-      const myData = snapshot.val();
-      const temp = Object.keys(myData).map(myFireId => ({
-        ...myData[myFireId],
-        planId: myFireId
-      }));
-      setProlist(temp);
-    }
-  };
-
-  const showComple = async () => {
+    const dbRefpro = ref(db, "plan/progress");
+    onValue(dbRefpro,snapshot=>{
+      const data=snapshot.val();
+      if(data)
+      {
+        const temp=Object.keys(data).map(id=>({
+          ...data[id],planId:id,
+        }));
+        setProlist(temp);
+      }
+      else
+      {
+        setProlist([]);
+      }
+    });
     const dbRefcom = ref(db, "plan/completed");
-    const snapshot = await get(dbRefcom);
-    if (snapshot.exists()) {
-      const myData = snapshot.val();
-      const temp = Object.keys(myData).map(myFireId => ({
-        ...myData[myFireId],
-        planId: myFireId
-      }));
-      setComlist(temp);
-    }
-  };
+    onValue(dbRefcom,snapshot=>{
+      const data=snapshot.val();
+      if(data)
+      {
+        const temp=Object.keys(data).map(id=>({
+          ...data[id],planId:id,
+        }));
+        setComlist(temp);
+      }
+      else
+      {
+        setComlist([]);
+      }
+    });
+  }
 
   const addToDo = async (event) => {
     event.preventDefault();
@@ -112,48 +115,12 @@ function ToDoApp() {
     set(newDocref, { name: todo })
       .then(() => {
         alert("Data saved successfully");
-        showToDo();
         setTodo('');
       })
       .catch((error) => {
         alert("Error: " + error.message);
       });
   };
-
-  const addInPro = async (event) => {
-    event.preventDefault();
-    if (inPro.trim() === '') {
-      alert("Task cannot be empty");
-      return;
-    }
-    const newDocref = push(ref(db, "plan/progress"));
-    set(newDocref, { name: inPro })
-      .then(() => {
-        alert("Data saved successfully");
-        setInPro('');
-      })
-      .catch((error) => {
-        alert("Error: " + error.message);
-      });
-  };
-
-  const addComple = async (event) => {
-    event.preventDefault();
-    if (comple.trim() === '') {
-      alert("Task cannot be empty");
-      return;
-    }
-    const newDocref = push(ref(db, "plan/completed"));
-    set(newDocref, { name: comple })
-      .then(() => {
-        alert("Data saved successfully");
-        setComple('');
-      })
-      .catch((error) => {
-        alert("Error: " + error.message);
-      });
-  };
-
   const deletePlan = async (source, id) => {
     const dbref = ref(db, "plan/" + source + "/" + id);
     await remove(dbref);
