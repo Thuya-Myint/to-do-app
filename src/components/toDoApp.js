@@ -81,10 +81,11 @@ function ToDoApp() {
         const temp=Object.keys(data).map(id=>({
           ...data[id],planId:id,
         }));
+        console.log(temp);
 
         const sortedTemp=temp.sort((a,b)=>{
           return a.name.localeCompare(b.name);
-        })
+        });
         setTodolist(sortedTemp);
       }
       else
@@ -178,7 +179,7 @@ function ToDoApp() {
   };
 
   return (
-    <div className="p-10 flex flex-col h-screen text-lg items-center bg-slate-300" >
+    <div className="p-10 flex flex-col h-screen text-lg items-center" >
       <form className="flex sm:flex-row flex-col" onSubmit={addToDo}>
         <input
           type="text"
